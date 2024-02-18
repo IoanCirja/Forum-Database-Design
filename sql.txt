@@ -1,0 +1,274 @@
+CREATE TABLE category (
+    id_category INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE USER (
+    id_user INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    password VARCHAR(50) NOT NULL,
+    email VARCHAR(50) NOT NULL,
+    register_date DATE NOT NULL,
+    last_login DATE NOT NULL,
+    CONSTRAINT name_validation CHECK (CHAR_LENGTH(name) > 3),
+    CONSTRAINT password_validation CHECK (CHAR_LENGTH(password) > 4 AND REGEXP_LIKE(password, '^[A-Z][a-z]*$')),
+    CONSTRAINT email_validation CHECK (REGEXP_LIKE(email, '[A-Za-z0-9._%-]+@[A-Za-z0-9._%-]+\.[A-Za-z]{2,4}', 'i') AND CHAR_LENGTH(email) > 2),
+    CONSTRAINT email_uk UNIQUE (email)
+);
+
+ALTER TABLE category
+    ADD CONSTRAINT name_check CHECK (CHAR_LENGTH(name) > 3);
+
+ALTER TABLE category ADD CONSTRAINT name_uk UNIQUE (name);
+
+CREATE TABLE COMMENT (
+    id_comment INT AUTO_INCREMENT PRIMARY KEY,
+    content VARCHAR(300) NOT NULL,
+    comment_date DATE NOT NULL,
+    id_post INT NOT NULL,
+    id_user INT NOT NULL
+);
+
+ALTER TABLE COMMENT
+    ADD CONSTRAINT content_validation CHECK (CHAR_LENGTH(content) > 5);
+
+CREATE TABLE feedback (
+    id_post INT NOT NULL,
+    id_user INT NOT NULL,
+    type VARCHAR(8) NOT NULL,
+    feedback_date DATE NOT NULL,
+    PRIMARY KEY (id_post, id_user),
+    CONSTRAINT type_validation CHECK (REGEXP_LIKE(type, '^(positive|negative)$', 'i'))
+);
+
+CREATE TABLE post (
+    id_post INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    content VARCHAR(1000) NOT NULL,
+    post_date DATE NOT NULL,
+    id_user INT NOT NULL,
+    id_category INT NOT NULL,
+    CONSTRAINT title_check CHECK (CHAR_LENGTH(title) > 3),
+    CONSTRAINT content_check CHECK (CHAR_LENGTH(content) > 10),
+    FOREIGN KEY (id_category) REFERENCES category (id_category)
+);
+
+CREATE TABLE post_tags (
+    id_post INT NOT NULL,
+    id_tag INT NOT NULL,
+    PRIMARY KEY (id_post, id_tag)
+);
+
+CREATE TABLE profile (
+    id_user INT PRIMARY KEY,
+    phone_number VARCHAR(10) NOT NULL,
+    hobbies VARCHAR(100),
+    description VARCHAR(100),
+    facebook VARCHAR(50),
+    location VARCHAR(80),
+    CONSTRAINT phone_validation CHECK (phone_number REGEXP '^[0-9]{10}$' AND CHAR_LENGTH(phone_number) >= 3),
+    CONSTRAINT facebook_validation CHECK (facebook REGEXP '^https?://(www\\.)?facebook\\.com/[a-zA-Z0-9.]+$' AND CHAR_LENGTH(facebook) > 8),
+    CONSTRAINT user_id_fk FOREIGN KEY (id_user) REFERENCES USER (id_user)
+);
+
+
+CREATE TABLE tags (
+    id_tag INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    CONSTRAINT tag_validation CHECK (REGEXP_LIKE(name, '^#.*', 'i') AND CHAR_LENGTH(name) > 2),
+    CONSTRAINT name_ukv1 UNIQUE (name)
+);
+
+
+
+CREATE TABLE COMMENT_TRIGGER_ERROR (
+    error_message VARCHAR(255)
+);
+
+DELIMITER //
+
+CREATE TRIGGER trg_FEEDBACK_BRIU
+BEFORE INSERT ON feedback
+FOR EACH ROW
+BEGIN
+    IF NEW.feedback_date > NOW() THEN
+        INSERT INTO COMMENT_TRIGGER_ERROR (error_message) VALUES ('Data invalida: ' || DATE_FORMAT(NEW.feedback_date, '%d.%m.%Y %H:%i:%s') || ' trebuie sa fie mai mica sau egala cu data curenta.');
+        SIGNAL SQLSTATE '45000';
+    END IF;
+END;
+//
+
+CREATE TRIGGER trg_POST_BRIU
+BEFORE INSERT ON post
+FOR EACH ROW
+BEGIN
+    IF NEW.post_date > NOW() THEN
+        INSERT INTO COMMENT_TRIGGER_ERROR (error_message) VALUES ('Data invalida: ' || DATE_FORMAT(NEW.post_date, '%d.%m.%Y %H:%i:%s') || ' trebuie sa fie mai mica sau egala cu data curenta.');
+        SIGNAL SQLSTATE '45000';
+    END IF;
+END;
+//
+
+CREATE TRIGGER trg_USER_BRIU
+BEFORE INSERT ON USER
+FOR EACH ROW
+BEGIN
+    IF NEW.register_date > NOW() THEN
+        INSERT INTO COMMENT_TRIGGER_ERROR (error_message) VALUES ('Data invalida: ' || DATE_FORMAT(NEW.register_date, '%d.%m.%Y %H:%i:%s') || ' trebuie sa fie mai mica sau egala cu data curenta.');
+        SIGNAL SQLSTATE '45000';
+    END IF;
+END;
+//
+
+CREATE TRIGGER trg1_USER_BRIU
+BEFORE INSERT ON USER
+FOR EACH ROW
+BEGIN
+    IF NEW.last_login > NOW() THEN
+        INSERT INTO COMMENT_TRIGGER_ERROR (error_message) VALUES ('Data invalida: ' || DATE_FORMAT(NEW.last_login, '%d.%m.%Y %H:%i:%s') || ' trebuie sa fie mai mica sau egala cu data curenta.');
+        SIGNAL SQLSTATE '45000';
+    END IF;
+END;
+//
+
+DELIMITER ;
+
+
+
+
+
+INSERT INTO `USER` (name, password, email, register_date, last_login)
+VALUES ('John Doe', 'Passwrd', 'john.doe@example.com', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+INSERT INTO `USER` (name, password, email, register_date, last_login)
+VALUES ('Alice Smith', 'Klujr', 'alice.smith@example.com', '2022-11-20', '2022-12-10');
+
+INSERT INTO `USER` (name, password, email, register_date, last_login)
+VALUES ('Bob Johnson', 'Vasdtgad', 'bob.johnson@example.com', '2022-10-25', '2022-11-05');
+
+INSERT INTO `USER` (name, password, email, register_date, last_login)
+VALUES ('Eva Miller', 'Lasdhfg', 'eva.miller@example.com', '2022-09-15', '2022-09-30');
+
+INSERT INTO `USER` (name, password, email, register_date, last_login)
+VALUES ('Sam Brown', 'Llasldflas', 'sam.brown@example.com', '2022-08-05', '2022-08-20');
+
+SELECT * FROM `USER`;
+
+
+
+INSERT INTO profile (id_user, phone_number, hobbies, description, facebook, location)
+VALUES ((SELECT id_user FROM `USER` WHERE name = 'John Doe'), '1234567890', 'Reading, Cooking', 'A software engineer who loves to cook.', 'https://www.facebook.com/johndoe', 'City A');
+
+INSERT INTO profile (id_user, phone_number, hobbies, description, facebook, location)
+VALUES ((SELECT id_user FROM `USER` WHERE name = 'Alice Smith'), '9876543210', 'Photography, Traveling', 'An adventurous photographer.', 'https://www.facebook.com/alicesmith', 'City B');
+
+INSERT INTO profile (id_user, phone_number, hobbies, description, facebook, location)
+VALUES ((SELECT id_user FROM `USER` WHERE name = 'Bob Johnson'), '5551234567', 'Gaming, Coding', 'A gamer and programmer.', 'https://www.facebook.com/bobjohnson', 'City C');
+
+INSERT INTO profile (id_user, phone_number, hobbies, description, facebook, location)
+VALUES ((SELECT id_user FROM `USER` WHERE name = 'Eva Miller'), '9998887777', 'Painting, Yoga', 'An artist who enjoys yoga.', 'https://www.facebook.com/evamiller', 'City D');
+
+INSERT INTO profile (id_user, phone_number, hobbies, description, facebook, location)
+VALUES ((SELECT id_user FROM `USER` WHERE name = 'Sam Brown'), '3332221111', 'Sports, Music', 'A sports enthusiast and music lover.', 'https://www.facebook.com/sambrown', 'City E');
+
+SELECT * FROM profile;
+
+
+-- Insert post categories
+INSERT INTO category (name) VALUES ('Technology');
+INSERT INTO category (name) VALUES ('Travel');
+INSERT INTO category (name) VALUES ('Food');
+INSERT INTO category (name) VALUES ('Fitness');
+INSERT INTO category (name) VALUES ('Fashion');
+INSERT INTO category (name) VALUES ('Movies');
+INSERT INTO category (name) VALUES ('Books');
+
+SELECT * FROM category ORDER BY id_category;
+
+-- Insert tags
+INSERT INTO tags (name) VALUES ('#Programming');
+INSERT INTO tags (name) VALUES ('#Adventure');
+INSERT INTO tags (name) VALUES ('#Cooking');
+INSERT INTO tags (name) VALUES ('#Fitness');
+INSERT INTO tags (name) VALUES ('#Fashion');
+INSERT INTO tags (name) VALUES ('#Movies');
+
+SELECT * FROM tags ORDER BY id_tag;
+
+
+INSERT INTO post (title, content, post_date, id_user, id_category)
+VALUES ('Introduction to Python', 'Learn the basics of Python programming.', '2022-12-15', (SELECT id_user FROM `USER` WHERE name = 'John Doe'), (SELECT id_category FROM category WHERE name = 'Technology'));
+
+INSERT INTO post (title, content, post_date, id_user, id_category)
+VALUES ('Exploring Southeast Asia', 'A journey through the beautiful landscapes of Southeast Asia.', '2022-11-01', (SELECT id_user FROM `USER` WHERE name = 'Alice Smith'), (SELECT id_category FROM category WHERE name = 'Travel'));
+
+INSERT INTO post (title, content, post_date, id_user, id_category)
+VALUES ('Delicious Italian Recipes', 'Discover mouth-watering Italian dishes to try at home.', '2022-10-10', (SELECT id_user FROM `USER` WHERE name = 'Bob Johnson'), (SELECT id_category FROM category WHERE name = 'Food'));
+
+INSERT INTO post (title, content, post_date, id_user, id_category)
+VALUES ('Effective Home Workouts', 'Stay fit with these simple and effective home workout routines.', '2022-09-20', (SELECT id_user FROM `USER` WHERE name = 'Eva Miller'), (SELECT id_category FROM category WHERE name = 'Fitness'));
+
+INSERT INTO post (title, content, post_date, id_user, id_category)
+VALUES ('Latest Fashion Trends', 'Explore the hottest fashion trends of the season.', '2022-08-10', (SELECT id_user FROM `USER` WHERE name = 'Sam Brown'), (SELECT id_category FROM category WHERE name = 'Fashion'));
+
+SELECT * FROM post;
+
+
+
+INSERT INTO feedback (id_post, id_user, type, feedback_date)
+VALUES ((SELECT id_post FROM post WHERE title = 'Introduction to Python'), (SELECT id_user FROM `USER` WHERE name = 'John Doe'), 'positive', '2022-12-16');
+
+INSERT INTO feedback (id_post, id_user, type, feedback_date)
+VALUES ((SELECT id_post FROM post WHERE title = 'Exploring Southeast Asia'), (SELECT id_user FROM `USER` WHERE name = 'Alice Smith'), 'positive', '2022-11-02');
+
+INSERT INTO feedback (id_post, id_user, type, feedback_date)
+VALUES ((SELECT id_post FROM post WHERE title = 'Delicious Italian Recipes'), (SELECT id_user FROM `USER` WHERE name = 'John Doe'), 'positive', '2022-11-02');
+
+
+
+
+
+INSERT INTO post_tags (id_post, id_tag)
+VALUES ((SELECT id_post FROM post WHERE title = 'Introduction to Python'), (SELECT id_tag FROM tags WHERE name = '#Programming'));
+
+INSERT INTO post_tags (id_post, id_tag)
+VALUES ((SELECT id_post FROM post WHERE title = 'Exploring Southeast Asia'), (SELECT id_tag FROM tags WHERE name = '#Adventure'));
+
+INSERT INTO post_tags (id_post, id_tag)
+VALUES ((SELECT id_post FROM post WHERE title = 'Delicious Italian Recipes'), (SELECT id_tag FROM tags WHERE name = '#Cooking'));
+
+INSERT INTO post_tags (id_post, id_tag)
+VALUES ((SELECT id_post FROM post WHERE title = 'Effective Home Workouts'), (SELECT id_tag FROM tags WHERE name = '#Fitness'));
+
+INSERT INTO post_tags (id_post, id_tag)
+VALUES ((SELECT id_post FROM post WHERE title = 'Latest Fashion Trends'), (SELECT id_tag FROM tags WHERE name = '#Fashion'));
+
+INSERT INTO post_tags (id_post, id_tag)
+VALUES ((SELECT id_post FROM post WHERE title = 'Latest Fashion Trends'), (SELECT id_tag FROM tags WHERE name = '#Adventure'));
+
+
+
+
+INSERT INTO COMMENT (content, comment_date, id_post, id_user)
+VALUES ('Great tutorial! Really helpful for beginners.', '2022-12-16', (SELECT id_post FROM post WHERE title = 'Introduction to Python'), (SELECT id_user FROM USER WHERE name = 'John Doe'));
+
+
+
+INSERT INTO COMMENT (content, comment_date, id_post, id_user)
+VALUES ('The pictures are amazing! I want to visit these places.', '2022-11-02', (SELECT id_post FROM post WHERE title = 'Exploring Southeast Asia'), (SELECT id_user FROM USER WHERE name = 'Alice Smith'));
+
+INSERT INTO COMMENT (content, comment_date, id_post, id_user)
+VALUES ('I tried making the pasta recipe, and it was delicious!', '2022-10-11', (SELECT id_post FROM post WHERE title = 'Delicious Italian Recipes'), (SELECT id_user FROM USER WHERE name = 'Bob Johnson'));
+
+INSERT INTO COMMENT (content, comment_date, id_post, id_user)
+VALUES ('These workouts are perfect for staying fit at home.', '2022-09-21', (SELECT id_post FROM post WHERE title = 'Effective Home Workouts'), (SELECT id_user FROM USER WHERE name = 'Eva Miller'));
+
+INSERT INTO COMMENT (content, comment_date, id_post, id_user)
+VALUES ('Not a fan of the latest trends, but interesting read.', '2022-08-11', (SELECT id_post FROM post WHERE title = 'Latest Fashion Trends'), (SELECT id_user FROM USER WHERE name = 'Sam Brown'));
+
+INSERT INTO COMMENT (content, comment_date, id_post, id_user)
+VALUES ('This tutorial made learning Python so much easier!', '2022-12-17', (SELECT id_post FROM post WHERE title = 'Introduction to Python'), (SELECT id_user FROM USER WHERE name = 'Alice Smith'));
+
+INSERT INTO COMMENT (content, comment_date, id_post, id_user)
+VALUES ('I appreciate the step-by-step explanation. Well done!', '2022-12-18', (SELECT id_post FROM post WHERE title = 'Introduction to Python'), (SELECT id_user FROM USER WHERE name = 'Bob Johnson'));
+

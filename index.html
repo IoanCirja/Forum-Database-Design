@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Application</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #6e41c5;
+            font-family: 'Arial', sans-serif;
+        }
+        .button{
+            margin: 5px;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 625px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid #6e41c5;
+            border-radius: 5px;
+            outline: none;
+            margin-top: 5px;
+            width: 600px;
+            transition: border-color 0.3s ease-in-out;
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            width: 621px;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        input:focus {
+            border-color: #4CAF50;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        #toggleFormButton {
+            background-color: #6e41c5;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 5px;
+            width: 621px;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+
+        #toggleFormButton:hover {
+            background-color: #593694;
+        }
+
+        .shape1,
+        .shape2 {
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            width: 50px;
+            height: 50px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            animation: moveShape 3s infinite alternate;
+        }
+
+        .shape2 {
+            top: auto;
+            bottom: -20px;
+            left: auto;
+            right: -20px;
+            background-color: #593694;
+            animation-delay: 1.5s;
+        }
+
+        @keyframes moveShape {
+            to {
+                transform: translate(40px, 40px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="shape1"></div>
+        <div class="shape2"></div>
+
+        <form id="registrationForm" action="/" method="post">
+            <input type="text" placeholder="Name" name="name">
+            <input type="text" placeholder="Email" name="email" autocomplete="off">
+            <input type="text" placeholder="Password" name="password" autocomplete="off">
+            <input type="text" placeholder="Phone Number" name="phone_number" autocomplete="off">
+            <input type="text" placeholder="Hobbies" name="hobbies" autocomplete="off">
+            <input type="text" placeholder="Description" name="description" autocomplete="off">
+            <input type="text" placeholder="Facebook Profile" name="facebook" autocomplete="off">
+            <input type="text" placeholder="Location" name="location" autocomplete="off">
+            <input type="submit" value="Submit">
+        </form>
+
+        <form id="loginForm" action="/login" method="post" style="display: none;">
+            <input type="text" placeholder="Email" name="email" autocomplete="off">
+            <input type="text" placeholder="Password" name="password" autocomplete="off">
+            <input type="submit" value="Login">
+        </form>
+
+        <button id="toggleFormButton" onclick="toggleForms()">Switch to Login</button>
+
+        <script>
+            function toggleForms() {
+                var registrationForm = document.getElementById('registrationForm');
+                var loginForm = document.getElementById('loginForm');
+
+                if (registrationForm.style.display === 'none') {
+                    registrationForm.style.display = 'block';
+                    loginForm.style.display = 'none';
+                    document.getElementById('toggleFormButton').innerText = 'Switch to Login';
+                } else {
+                    registrationForm.style.display = 'none';
+                    loginForm.style.display = 'block';
+                    document.getElementById('toggleFormButton').innerText = 'Switch to Registration';
+                }
+            }
+        </script>
+    </div>
+</body>
+
+</html>
